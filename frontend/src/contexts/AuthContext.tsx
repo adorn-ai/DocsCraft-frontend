@@ -13,6 +13,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Helper function to get the correct redirect URL
+const getRedirectUrl = () => {
+  // Check if we're in production (Vercel)
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_SITE_URL 
+      ? `${import.meta.env.VITE_SITE_URL}/auth/callback`
+      : 'https://git-crafts.vercel.app/auth/callback'
+  }
+  // Development - use localhost
+  return `${window.location.origin}/auth/callback`
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -40,21 +52,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   //enables sign in with github
   const signInWithGithub = async () => {
+    const redirectUrl = getRedirectUrl()
+    console.log('GitHub OAuth redirect URL:', redirectUrl)
+    
     await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
         scopes: 'read:user user:email repo',
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: redirectUrl
       }
     })
   }
 
   //enables sign in with google
   const signInWithGoogle = async () => {
+    const redirectUrl = getRedirectUrl()
+    console.log('Google OAuth redirect URL:', redirectUrl)
+    
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: redirectUrl
       }
     })
   }
