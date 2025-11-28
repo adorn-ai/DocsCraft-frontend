@@ -11,7 +11,7 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-3 text-center">
           <div className="flex justify-center mb-4">
-            <img src="src\assets\G (1).png" alt="GitCrafts" className="h-32 w-32" />
+            <img src="/G (1).png" alt="GitCrafts" className="h-32 w-32" />
           </div>
           <CardTitle className="text-3xl font-bold">
             Welcome to GitCrafts
