@@ -1,10 +1,17 @@
-import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Zap, Shield, Github, ArrowRight, CheckCircle } from 'lucide-react'
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  FileText,
+  Zap,
+  Shield,
+  Github,
+  ArrowRight,
+  CheckCircle,
+} from "lucide-react";
 
 export default function Landing() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
@@ -12,15 +19,37 @@ export default function Landing() {
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img src="src\assets\G (1).png" alt="GitCrafts" className="h-20 w-20" />
+            <img
+              src="src\assets\G (1).png"
+              alt="GitCrafts"
+              className="h-20 w-20"
+            />
             <span className="text-2xl font-bold text-gray-900">GitCrafts</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-gray-600 hover:text-orange-600 transition">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-orange-600 transition">Pricing</a>
-            <a href="#how-it-works" className="text-gray-600 hover:text-orange-600 transition">How it Works</a>
+            <a
+              href="#features"
+              className="text-gray-600 hover:text-orange-600 transition"
+            >
+              Features
+            </a>
+            <a
+              href="#pricing"
+              className="text-gray-600 hover:text-orange-600 transition"
+            >
+              Pricing
+            </a>
+            <a
+              href="#how-it-works"
+              className="text-gray-600 hover:text-orange-600 transition"
+            >
+              How it Works
+            </a>
           </div>
-          <Button onClick={() => navigate('/login')} className="bg-orange-600 hover:bg-orange-700">
+          <Button
+            onClick={() => navigate("/login")}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
             Get Started
           </Button>
         </div>
@@ -31,32 +60,35 @@ export default function Landing() {
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-600 px-4 py-2 rounded-full mb-8">
             <Zap className="h-4 w-4" />
-            <span className="text-sm font-medium">AI-powered documentation</span>
+            <span className="text-sm font-medium">
+              AI-powered documentation
+            </span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
             AI-powered builder
             <br />
             <span className="text-orange-600">for your ideas</span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto">
-            GitCrafts lets you generate professional documentation in minutes using only AI—no coding required.
+            GitCrafts lets you generate professional documentation in minutes
+            using AI, no coding required. Built for developers, by developers
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/login')}
+            <Button
+              size="lg"
+              onClick={() => navigate("/login")}
               className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 text-lg"
             >
               <Github className="mr-2 h-5 w-5" />
               Start Building Free
             </Button>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
-              onClick={() => navigate('/pricing')}
+              onClick={() => navigate("/pricing")}
               className="border-2 border-gray-900 text-gray-900 hover:bg-gray-50 px-8 py-6 text-lg"
             >
               View Pricing
@@ -66,7 +98,9 @@ export default function Landing() {
 
           {/* Not sure where to start section */}
           <div className="bg-white rounded-2xl shadow-lg p-8 max-w-2xl mx-auto">
-            <p className="text-gray-600 mb-4">Not sure where to start? Try one of these:</p>
+            <p className="text-gray-600 mb-4">
+              Not sure where to start? Try one of these:
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <button className="flex items-center gap-2 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition text-left">
                 <FileText className="h-5 w-5 text-orange-600" />
@@ -76,6 +110,7 @@ export default function Landing() {
                 <FileText className="h-5 w-5 text-orange-600" />
                 <span className="text-sm font-medium">API Docs</span>
               </button>
+              {/*
               <button className="flex items-center gap-2 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition text-left">
                 <FileText className="h-5 w-5 text-orange-600" />
                 <span className="text-sm font-medium">Changelog</span>
@@ -84,6 +119,7 @@ export default function Landing() {
                 <FileText className="h-5 w-5 text-orange-600" />
                 <span className="text-sm font-medium">Contributing Guide</span>
               </button>
+              */}
             </div>
           </div>
         </div>
@@ -107,9 +143,12 @@ export default function Landing() {
                 <div className="bg-orange-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
                   <Zap className="h-7 w-7 text-orange-600" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">Lightning Fast</h3>
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">
+                  Lightning Fast
+                </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Generate comprehensive documentation in under 60 seconds. No more spending hours writing docs.
+                  Generate comprehensive documentation in under 60 seconds. No
+                  more spending hours writing docs.
                 </p>
               </CardContent>
             </Card>
@@ -119,9 +158,12 @@ export default function Landing() {
                 <div className="bg-orange-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
                   <Shield className="h-7 w-7 text-orange-600" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">Private & Secure</h3>
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">
+                  Private & Secure
+                </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Works with private repositories. Your code stays on GitHub—we only analyze structure.
+                  Works with private repositories. Your code stays on GitHub, we
+                  only analyze structure.
                 </p>
               </CardContent>
             </Card>
@@ -131,9 +173,12 @@ export default function Landing() {
                 <div className="bg-orange-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
                   <FileText className="h-7 w-7 text-orange-600" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-gray-900">Multiple Formats</h3>
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">
+                  Multiple Formats
+                </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  README, API docs, changelogs, and contributing guidelines—all in one place.
+                  README, API docs, changelogs, and contributing guidelines, all
+                  in one place.
                 </p>
               </CardContent>
             </Card>
@@ -158,9 +203,12 @@ export default function Landing() {
               <div className="bg-orange-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                 1
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Connect Repository</h3>
+              <h3 className="text-xl font-bold mb-3 text-gray-900">
+                Connect Repository
+              </h3>
               <p className="text-gray-600">
-                Sign in with GitHub and connect your repository—public or private.
+                Sign in with GitHub and connect your repository, public or
+                private.
               </p>
             </div>
 
@@ -168,7 +216,9 @@ export default function Landing() {
               <div className="bg-orange-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                 2
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Choose Docs</h3>
+              <h3 className="text-xl font-bold mb-3 text-gray-900">
+                Choose Docs
+              </h3>
               <p className="text-gray-600">
                 Select which documentation types you want to generate.
               </p>
@@ -178,9 +228,12 @@ export default function Landing() {
               <div className="bg-orange-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                 3
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Generate & Download</h3>
+              <h3 className="text-xl font-bold mb-3 text-gray-900">
+                Generate & Download
+              </h3>
               <p className="text-gray-600">
-                AI generates professional docs in seconds. Download or copy instantly.
+                AI generates professional docs in seconds. Download or copy
+                instantly.
               </p>
             </div>
           </div>
@@ -223,7 +276,11 @@ export default function Landing() {
                     <span>Public repositories</span>
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full" onClick={() => navigate('/login')}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate("/login")}
+                >
                   Get Started Free
                 </Button>
               </CardContent>
@@ -238,9 +295,9 @@ export default function Landing() {
               </div>
               <CardContent className="p-8">
                 <h3 className="text-2xl font-bold mb-2">Pro</h3>
-                <p className="text-gray-600 mb-6">For serious developers</p>
+                <p className="text-gray-600 mb-6">For developers with heavy documentation needs</p>
                 <div className="mb-8">
-                  <span className="text-5xl font-bold">$ 14.99</span>
+                  <span className="text-5xl font-bold">$ 9.99</span>
                   <span className="text-gray-600">/month</span>
                 </div>
                 <ul className="space-y-4 mb-8">
@@ -261,7 +318,10 @@ export default function Landing() {
                     <span>Priority support</span>
                   </li>
                 </ul>
-                <Button className="w-full bg-orange-600 hover:bg-orange-700" onClick={() => navigate('/pricing')}>
+                <Button
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                  onClick={() => navigate("/pricing")}
+                >
                   Upgrade to Pro
                 </Button>
               </CardContent>
@@ -279,9 +339,9 @@ export default function Landing() {
           <p className="text-xl text-gray-600 mb-8">
             Join developers who are shipping faster with AI-generated docs
           </p>
-          <Button 
-            size="lg" 
-            onClick={() => navigate('/login')}
+          <Button
+            size="lg"
+            onClick={() => navigate("/login")}
             className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 text-lg"
           >
             Start Free Today
@@ -299,9 +359,15 @@ export default function Landing() {
               <span className="text-xl font-bold">GitCrafts</span>
             </div>
             <div className="flex gap-8">
-              <a href="#" className="text-gray-400 hover:text-white transition">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-white transition">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-white transition">Contact</a>
+              <a href="#" className="text-gray-400 hover:text-white transition">
+                Privacy
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition">
+                Terms
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition">
+                Contact
+              </a>
             </div>
           </div>
           <div className="mt-8 text-center text-gray-400 text-sm">
@@ -310,5 +376,5 @@ export default function Landing() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
