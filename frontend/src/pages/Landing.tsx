@@ -20,7 +20,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <img
-              src="/G (1).png"
+              src="/logo.png"
               alt="GitCrafts"
               className="h-20 w-20"
             />

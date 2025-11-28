@@ -100,7 +100,7 @@ export default function Dashboard() {
       <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <img src="/G (1).png" alt="GitCrafts" className="h-16 w-16" />
+            <img src="/logo.png" alt="GitCrafts" className="h-16 w-16" />
             <h1 className="text-2xl font-bold text-gray-900">GitCrafts</h1>
           </div>
           
