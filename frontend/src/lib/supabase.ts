@@ -15,8 +15,9 @@ export type User = {
   is_subscribed: boolean
 }
 
+
 // Expose supabase client to browser console
-if (typeof window !== "undefined") {
+// if (typeof window !== "undefined") {
   // @ts-ignore
-  window.supabase = supabase;
-}
+  //window.supabase = supabase;
+//}

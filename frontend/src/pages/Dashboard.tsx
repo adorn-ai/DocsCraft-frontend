@@ -50,7 +50,7 @@ export default function Dashboard() {
         setSubscription(data)
       }
     } catch (error) {
-      console.error('Error fetching subscription:', error)
+      // console.error('Error fetching subscription:', error)
     }
   }
 

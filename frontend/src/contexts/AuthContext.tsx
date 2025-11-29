@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
+        // console.log('Auth state changed:', event, session?.user?.email)
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGithub = async () => {
     const redirectUrl = getRedirectUrl()
-    console.log('GitHub OAuth redirect URL:', redirectUrl)
+    // console.log('GitHub OAuth redirect URL:', redirectUrl)
     
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -70,13 +70,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        console.error('GitHub OAuth error:', error)
+        // console.error('GitHub OAuth error:', error)
         toast.error('Failed to sign in with GitHub', {
           description: error.message
         })
       }
     } catch (err: any) {
-      console.error('GitHub sign in error:', err)
+      // console.error('GitHub sign in error:', err)
       toast.error('Sign in failed', {
         description: err.message
       })
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     const redirectUrl = getRedirectUrl()
-    console.log('Google OAuth redirect URL:', redirectUrl)
+    // console.log('Google OAuth redirect URL:', redirectUrl)
     
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -96,13 +96,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        console.error('Google OAuth error:', error)
+        // console.error('Google OAuth error:', error)
         toast.error('Failed to sign in with Google', {
           description: error.message
         })
       }
     } catch (err: any) {
-      console.error('Google sign in error:', err)
+      // console.error('Google sign in error:', err)
       toast.error('Sign in failed', {
         description: err.message
       })

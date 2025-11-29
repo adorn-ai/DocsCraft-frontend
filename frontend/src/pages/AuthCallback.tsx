@@ -10,9 +10,9 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        console.log('Processing OAuth callback...')
-        console.log('Current URL:', window.location.href)
-        console.log('Hash:', window.location.hash)
+        //console.log('Processing OAuth callback...')
+        //console.log('Current URL:', window.location.href)
+        //console.log('Hash:', window.location.hash)
         
         // Supabase automatically handles the OAuth callback
         // Just check if we have a session
@@ -26,14 +26,14 @@ export default function AuthCallback() {
         }
 
         if (session) {
-          console.log('Session found, redirecting to dashboard')
+          //console.log('Session found, redirecting to dashboard')
           navigate('/dashboard')
         } else {
-          console.log('No session found, redirecting to login')
+          //console.log('No session found, redirecting to login')
           setTimeout(() => navigate('/login'), 1000)
         }
       } catch (err: any) {
-        console.error('OAuth callback error:', err)
+        //console.error('OAuth callback error:', err)
         setError(err.message)
         setTimeout(() => navigate('/login'), 2000)
       }
