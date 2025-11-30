@@ -194,7 +194,7 @@ export default function Dashboard() {
                         size="sm"
                         className="flex-1 bg-orange-600 hover:bg-orange-700"
                         onClick={() => navigate(`/generate/${repo.id}`)}
-                        disabled={repo.clone_status !== 'completed'}
+                        disabled={repo.clone_status == 'completed'}
                       >
                         <FileText className="h-3 w-3 mr-1" />
                         Generate
