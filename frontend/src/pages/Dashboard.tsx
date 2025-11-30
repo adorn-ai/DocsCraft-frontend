@@ -7,6 +7,7 @@ import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Trash2, ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -50,7 +51,7 @@ export default function Dashboard() {
         setSubscription(data)
       }
     } catch (error) {
-      // console.error('Error fetching subscription:', error)
+      console.error('Error fetching subscription:', error)
     }
   }
 
@@ -85,13 +86,40 @@ export default function Dashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500 hover:bg-green-600">Completed</Badge>
+        return <Badge className="bg-green-500 hover:bg-green-600 text-white">Ready</Badge>
       case 'failed':
         return <Badge variant="destructive">Failed</Badge>
       case 'processing':
-        return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Processing</Badge>
+        return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Analyzing</Badge>
       default:
-        return <Badge variant="secondary">Pending</Badge>
+        return <Badge variant="secondary">Fetching</Badge>
+    }
+  }
+
+  const getStatusMessage = (status: string) => {
+    switch (status) {
+      case 'processing':
+        return (
+          <div className="flex items-center gap-2 text-sm text-blue-600">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Analyzing repository structure...</span>
+          </div>
+        )
+      case 'pending':
+        return (
+          <div className="flex items-center gap-2 text-sm text-orange-600">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Connecting to GitHub...</span>
+          </div>
+        )
+      case 'failed':
+        return (
+          <p className="text-xs text-red-500">
+            Failed to fetch repository. Please check the URL and try again.
+          </p>
+        )
+      default:
+        return null
     }
   }
 
@@ -100,7 +128,7 @@ export default function Dashboard() {
       <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <img src="/logo.png" alt="GitCrafts" className="h-16 w-16" />
+            <img src="/logo.png" alt="GitCrafts" className="h-8 w-8" />
             <h1 className="text-2xl font-bold text-gray-900">GitCrafts</h1>
           </div>
           
@@ -119,7 +147,7 @@ export default function Dashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">My Repositories</h2>
             <p className="text-gray-600">Manage your connected repositories</p>
@@ -146,7 +174,7 @@ export default function Dashboard() {
               <Card key={repo.id} className="hover:shadow-lg transition-all border-2 hover:border-orange-200">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg truncate text-gray-900">
                         {repo.repo_url.split('/').slice(-1)[0].replace('.git', '')}
                       </CardTitle>
@@ -158,7 +186,7 @@ export default function Dashboard() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(repo.id)}
-                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -172,6 +200,9 @@ export default function Dashboard() {
                         {getStatusBadge(repo.clone_status)}
                       </div>
                     </div>
+
+                    {/* Status message */}
+                    {getStatusMessage(repo.clone_status)}
 
                     <div className="flex gap-2">
                       <Button 
@@ -190,22 +221,33 @@ export default function Dashboard() {
                         </a>
                       </Button>
                       
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-orange-600 hover:bg-orange-700"
-                        onClick={() => navigate(`/generate/${repo.id}`)}
-                        disabled={repo.clone_status == 'completed'}
-                      >
-                        <FileText className="h-3 w-3 mr-1" />
-                        Generate
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex-1">
+                              <Button
+                                size="sm"
+                                className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => navigate(`/generate/${repo.id}`)}
+                                disabled={repo.clone_status !== 'completed'}
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                {repo.clone_status === 'completed' ? 'Generate' : 'Waiting...'}
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {repo.clone_status !== 'completed' && (
+                            <TooltipContent>
+                              <p className="text-xs">
+                                {repo.clone_status === 'pending' && 'Fetching repository from GitHub...'}
+                                {repo.clone_status === 'processing' && 'Analyzing repository structure...'}
+                                {repo.clone_status === 'failed' && 'Repository fetch failed. Please try adding again.'}
+                              </p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-
-                    {repo.clone_status === 'failed' && (
-                      <p className="text-xs text-red-500">
-                        Failed to fetch repository. Please try again.
-                      </p>
-                    )}
                   </div>
                 </CardContent>
               </Card>
