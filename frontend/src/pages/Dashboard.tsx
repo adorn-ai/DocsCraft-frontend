@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 // import { useAuth } from '@/contexts/AuthContext'
-import { getMyRepos, deleteRepo, subscribeToRepoUpdates } from '@/services/repoService'
+import { getMyRepos, deleteRepo } from '@/services/repoService'
 import { AddRepoModal } from '@/components/AddRepoModal'
 import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
@@ -59,13 +59,14 @@ export default function Dashboard() {
     fetchRepos()
     fetchSubscription()
 
-    const repoSubscription = subscribeToRepoUpdates((payload) => {
-      console.log('Repo updated:', payload)
-      fetchRepos()
-    })
+    //const repoSubscription ((payload) => {
+      // console.log('Repo updated:', payload)
+      // fetchRepos()
+    // })
 
     return () => {
-      repoSubscription.unsubscribe()
+      
+      // repoSubscription.unsubscribe()
     }
   }, [])
 

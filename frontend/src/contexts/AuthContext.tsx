@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
-import { toast } from 'sonner'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  githubToken: string | null
   signInWithGithub: () => Promise<void>
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
@@ -14,99 +14,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Helper function to get the correct redirect URL
+// helper function to get the correct redirect URL
 const getRedirectUrl = () => {
-  // In production, use the site URL
-  if (import.meta.env.PROD && import.meta.env.VITE_SITE_URL) {
-    return `${import.meta.env.VITE_SITE_URL}/auth/callback`
+  // check if in prod
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_SITE_URL 
+      ? `${import.meta.env.VITE_SITE_URL}/auth/callback`
+      : 'https://git-crafts.vercel.app/auth/callback'
   }
-  // Development - use localhost
+  // use localhost in dev
   return `${window.location.origin}/auth/callback`
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [githubToken, setGithubToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
+    // get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      
+      // Extract GitHub provider token if available
+      if (session?.provider_token) {
+        setGithubToken(session.provider_token)
+        console.log('GitHub token available:', session.provider_token.substring(0, 20) + '...')
+      }
+      
       setLoading(false)
     })
 
-    // Listen for auth changes
+    // listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // console.log('Auth state changed:', event, session?.user?.email)
+      (_event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
-        setLoading(false)
-
-        if (event === 'SIGNED_IN') {
-          toast.success('Signed in successfully!')
-        } else if (event === 'SIGNED_OUT') {
-          toast.info('Signed out')
+        
+        // Extract GitHub provider token if available
+        if (session?.provider_token) {
+          setGithubToken(session.provider_token)
+          console.log('GitHub token updated:', session.provider_token.substring(0, 20) + '...')
         }
+        
+        setLoading(false)
       }
     )
 
     return () => subscription.unsubscribe()
   }, [])
 
+  //enables sign in with github
   const signInWithGithub = async () => {
     const redirectUrl = getRedirectUrl()
-    // console.log('GitHub OAuth redirect URL:', redirectUrl)
+    console.log('GitHub OAuth redirect URL:', redirectUrl)
     
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-          scopes: 'read:user user:email repo',
-          redirectTo: redirectUrl
-        }
-      })
-
-      if (error) {
-        // console.error('GitHub OAuth error:', error)
-        toast.error('Failed to sign in with GitHub', {
-          description: error.message
-        })
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        scopes: 'read:user user:email repo',
+        redirectTo: redirectUrl
       }
-    } catch (err: any) {
-      // console.error('GitHub sign in error:', err)
-      toast.error('Sign in failed', {
-        description: err.message
-      })
-    }
+    })
   }
 
+  //enables sign in with google
   const signInWithGoogle = async () => {
     const redirectUrl = getRedirectUrl()
-    // console.log('Google OAuth redirect URL:', redirectUrl)
+    console.log('Google OAuth redirect URL:', redirectUrl)
     
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl
-        }
-      })
-
-      if (error) {
-        // console.error('Google OAuth error:', error)
-        toast.error('Failed to sign in with Google', {
-          description: error.message
-        })
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl
       }
-    } catch (err: any) {
-      // console.error('Google sign in error:', err)
-      toast.error('Sign in failed', {
-        description: err.message
-      })
-    }
+    })
   }
 
   const signOut = async () => {
@@ -117,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{ 
       user, 
       session, 
+      githubToken,
       loading, 
       signInWithGithub, 
       signInWithGoogle, 
