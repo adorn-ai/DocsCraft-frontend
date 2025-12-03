@@ -213,7 +213,7 @@ export default function Pricing() {
               <CardTitle className="text-2xl">Pro</CardTitle>
               <CardDescription>For big time developers</CardDescription>
               <div className="mt-4">
-                <span className="text-4xl font-bold">KES 800</span>
+                <span className="text-4xl font-bold">$5.99</span>
                 <span className="text-gray-600">/month</span>
               </div>
             </CardHeader>
