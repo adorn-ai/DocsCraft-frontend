@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-// import { useAuth } from '@/contexts/AuthContext'
 import { getMyRepos, deleteRepo } from '@/services/repoService'
 import { AddRepoModal } from '@/components/AddRepoModal'
 import { UserMenu } from '@/components/UserMenu'
@@ -15,7 +14,6 @@ import { supabase } from '@/lib/supabase'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function Dashboard() {
-  // const { user } = useAuth()
   const navigate = useNavigate()
   const [repos, setRepos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,16 +57,39 @@ export default function Dashboard() {
     fetchRepos()
     fetchSubscription()
 
-    //const repoSubscription ((payload) => {
-      // console.log('Repo updated:', payload)
-      // fetchRepos()
-    // })
+    // Set up real-time subscription for repo updates
+    const channel = supabase
+      .channel('repos-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'repos'
+        },
+        (payload) => {
+          console.log('Repo change detected:', payload)
+          // Refresh repos when any change occurs
+          fetchRepos()
+        }
+      )
+      .subscribe()
+
+    // Auto-refresh every 5 seconds for repos that are pending or processing
+    const interval = setInterval(() => {
+      const hasPendingRepos = repos.some(
+        repo => repo.clone_status === 'pending' || repo.clone_status === 'processing'
+      )
+      if (hasPendingRepos) {
+        fetchRepos()
+      }
+    }, 5000)
 
     return () => {
-      
-      // repoSubscription.unsubscribe()
+      channel.unsubscribe()
+      clearInterval(interval)
     }
-  }, [])
+  }, [repos])
 
   const handleDelete = async (repoId: string) => {
     if (!confirm('Are you sure you want to delete this repository?')) return
@@ -82,6 +103,11 @@ export default function Dashboard() {
         description: error.message
       })
     }
+  }
+
+  const handleRepoAdded = () => {
+    // Immediately refresh the repo list when a new repo is added
+    fetchRepos()
   }
 
   const getStatusBadge = (status: string) => {
@@ -116,7 +142,7 @@ export default function Dashboard() {
       case 'failed':
         return (
           <p className="text-xs text-red-500">
-            Failed to fetch repository. Please check the URL and try again.
+            Failed to fetch repository. Please check the URL and permissions.
           </p>
         )
       default:
@@ -153,7 +179,7 @@ export default function Dashboard() {
             <h2 className="text-3xl font-bold text-gray-900">My Repositories</h2>
             <p className="text-gray-600">Manage your connected repositories</p>
           </div>
-          <AddRepoModal onSuccess={fetchRepos} />
+          <AddRepoModal onSuccess={handleRepoAdded} />
         </div>
 
         {loading ? (
@@ -166,7 +192,7 @@ export default function Dashboard() {
               <FileText className="h-12 w-12 text-orange-400 mb-4" />
               <p className="text-gray-700 font-medium mb-2">No repositories yet</p>
               <p className="text-sm text-gray-500 mb-6">Add your first repository to get started</p>
-              <AddRepoModal onSuccess={fetchRepos} />
+              <AddRepoModal onSuccess={handleRepoAdded} />
             </CardContent>
           </Card>
         ) : (

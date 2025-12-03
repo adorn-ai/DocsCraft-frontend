@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { addRepo, fetchRepo } from '@/services/repoService'
+import { addRepo } from '@/services/repoService'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,11 +13,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface AddRepoModalProps {
-  onSuccess?: () => void
+  onSuccess: () => void
 }
 
 export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
@@ -25,70 +25,70 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
   const [repoUrl, setRepoUrl] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState<'adding' | 'fetching' | 'done'>('adding')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!repoUrl.trim()) {
-      toast.error('Please enter a repository URL')
+      toast.error('Error', {
+        description: 'Please enter a repository URL'
+      })
       return
     }
 
+    // Validate GitHub URL
     if (!repoUrl.includes('github.com')) {
-      toast.error('Please enter a valid GitHub URL')
+      toast.error('Invalid URL', {
+        description: 'Please enter a valid GitHub repository URL'
+      })
       return
     }
 
     setLoading(true)
-    setStep('adding')
-
     try {
-      // Step 1: Add repo to database
-      toast.info('Adding repository...')
-      const repo = await addRepo(repoUrl, isPrivate)
+      await addRepo(repoUrl.trim(), isPrivate)
       
-      // Step 2: Fetch repo content
-      setStep('fetching')
-      toast.info('Fetching repository content...')
-      await fetchRepo(repo.id)
+      toast.success('Repository Added', {
+        description: 'Your repository is being processed...'
+      })
       
-      // Success
-      setStep('done')
-      toast.success('Repository added successfully!')
       setOpen(false)
       setRepoUrl('')
       setIsPrivate(false)
       
-      if (onSuccess) {
-        onSuccess()
-      }
+      // Call onSuccess to trigger refresh
+      onSuccess()
     } catch (error: any) {
-      console.error('Error adding repo:', error)
-      toast.error('Error', {
-        description: error.message || 'Failed to add repository'
-      })
+      console.error('Add repo error:', error)
+      
+      // Handle specific error cases
+      if (error.message.includes('already added')) {
+        toast.error('Duplicate Repository', {
+          description: 'This repository has already been added'
+        })
+      } else if (error.message.includes('authentication required')) {
+        toast.error('Authentication Required', {
+          description: 'Please ensure you are logged in with GitHub and have granted repository access',
+          duration: 5000
+        })
+      } else if (error.message.includes('Invalid GitHub URL')) {
+        toast.error('Invalid URL', {
+          description: 'Please check the repository URL and try again'
+        })
+      } else {
+        toast.error('Failed to Add Repository', {
+          description: error.message || 'An unexpected error occurred'
+        })
+      }
     } finally {
       setLoading(false)
-      setStep('adding')
-    }
-  }
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!loading) {
-      setOpen(newOpen)
-      if (!newOpen) {
-        setRepoUrl('')
-        setIsPrivate(false)
-        setStep('adding')
-      }
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="bg-orange-600 hover:bg-orange-700">
           <Plus className="mr-2 h-4 w-4" />
           Add Repository
         </Button>
@@ -96,11 +96,12 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add GitHub Repository</DialogTitle>
+            <DialogTitle>Add Repository</DialogTitle>
             <DialogDescription>
-              Enter the URL of the GitHub repository you want to add
+              Connect a GitHub repository to generate documentation
             </DialogDescription>
           </DialogHeader>
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="repo-url">Repository URL</Label>
@@ -111,44 +112,54 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
                 onChange={(e) => setRepoUrl(e.target.value)}
                 disabled={loading}
               />
+              <p className="text-xs text-gray-500">
+                Enter the full GitHub repository URL
+              </p>
             </div>
+
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="is-private"
+                id="private"
                 checked={isPrivate}
                 onCheckedChange={(checked) => setIsPrivate(checked as boolean)}
                 disabled={loading}
               />
               <Label
-                htmlFor="is-private"
+                htmlFor="private"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Private repository (requires GitHub authentication)
+                This is a private repository
               </Label>
             </div>
-            {loading && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  <div className="text-sm">
-                    {step === 'adding' && 'Adding repository to database...'}
-                    {step === 'fetching' && 'Fetching repository content from GitHub...'}
-                    {step === 'done' && 'Done!'}
-                  </div>
+
+            {isPrivate && (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-800">
+                  <p className="font-medium mb-1">Private Repository Access</p>
+                  <p>
+                    Make sure you're logged in with GitHub and have granted repository access permissions. 
+                    If you're having issues, try logging out and logging back in.
+                  </p>
                 </div>
               </div>
             )}
           </div>
+
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleOpenChange(false)}
+              onClick={() => setOpen(false)}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading || !repoUrl.trim()}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

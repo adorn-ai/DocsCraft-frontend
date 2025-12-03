@@ -9,6 +9,8 @@ import ViewDocs from "./pages/ViewDocs";
 import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import PaymentCallback from "./pages/PaymentCallback";
+import Pricing from "./pages/Pricing";
 
 export default function App() {
   return (
@@ -16,11 +18,12 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/" element={<Landing />} />
 
           <Route
-            path="/dashboard"
+            path="/dashboard" 
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -60,6 +63,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/payment/callback"
+            element={
+              <ProtectedRoute>
+                <PaymentCallback />
               </ProtectedRoute>
             }
           />
