@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import type { User } from '@supabase/supabase-js'
-import type { Session } from '@supabase/supabase-js'
+import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
+  loading: boolean
   signOut: () => Promise<void>
   signInWithGithub: () => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -14,6 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
+  loading: true,
   signOut: async () => {},
   signInWithGithub: async () => {},
   signInWithGoogle: async () => {}
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, signOut, signInWithGithub, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, signInWithGithub, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   )
