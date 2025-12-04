@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyRepos, deleteRepo } from '@/services/repoService'
 import { AddRepoModal } from '@/components/AddRepoModal'
@@ -19,29 +19,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState<any>(null)
 
-  const fetchRepos = async () => {
+  // Fetch repos
+  const fetchRepos = useCallback(async () => {
     try {
       const data = await getMyRepos()
       setRepos(data)
     } catch (error: any) {
-      toast.error('Error', {
-        description: error.message
-      })
+      toast.error('Error', { description: error.message })
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchSubscription = async () => {
+  // Fetch subscription status
+  const fetchSubscription = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
       if (!session) return
 
       const response = await fetch(`${API_URL}/paystack/subscription`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
       })
 
       if (response.ok) {
@@ -51,64 +48,54 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error fetching subscription:', error)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchRepos()
     fetchSubscription()
 
-    // Set up real-time subscription for repo updates
+    // Supabase real-time subscription
     const channel = supabase
       .channel('repos-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'repos'
-        },
+        { event: '*', schema: 'public', table: 'repos' },
         (payload) => {
           console.log('Repo change detected:', payload)
-          // Refresh repos when any change occurs
           fetchRepos()
         }
       )
       .subscribe()
 
-    // Auto-refresh every 5 seconds for repos that are pending or processing
-    const interval = setInterval(() => {
-      const hasPendingRepos = repos.some(
-        repo => repo.clone_status === 'pending' || repo.clone_status === 'processing'
-      )
-      if (hasPendingRepos) {
-        fetchRepos()
-      }
-    }, 5000)
-
     return () => {
       channel.unsubscribe()
-      clearInterval(interval)
     }
-  }, [repos])
+  }, [fetchRepos, fetchSubscription])
+
+  // Poll pending/processing repos every 10s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hasPending = repos.some(
+        repo => repo.clone_status === 'pending' || repo.clone_status === 'processing'
+      )
+      if (hasPending) fetchRepos()
+    }, 10000) // poll every 10 seconds instead of 5
+
+    return () => clearInterval(interval)
+  }, [repos, fetchRepos])
 
   const handleDelete = async (repoId: string) => {
     if (!confirm('Are you sure you want to delete this repository?')) return
-    
     try {
       await deleteRepo(repoId)
       toast.success('Repository deleted')
       fetchRepos()
     } catch (error: any) {
-      toast.error('Error', {
-        description: error.message
-      })
+      toast.error('Error', { description: error.message })
     }
   }
 
-  const handleRepoAdded = () => {
-    // Immediately refresh the repo list when a new repo is added
-    fetchRepos()
-  }
+  const handleRepoAdded = () => fetchRepos()
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -126,27 +113,18 @@ export default function Dashboard() {
   const getStatusMessage = (status: string) => {
     switch (status) {
       case 'processing':
-        return (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Analyzing repository structure...</span>
-          </div>
-        )
+        return <div className="flex items-center gap-2 text-sm text-blue-600">
+          <Loader2 className="h-3 w-3 animate-spin" />Analyzing repository structure...
+        </div>
       case 'pending':
-        return (
-          <div className="flex items-center gap-2 text-sm text-orange-600">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Connecting to GitHub...</span>
-          </div>
-        )
+        return <div className="flex items-center gap-2 text-sm text-orange-600">
+          <Loader2 className="h-3 w-3 animate-spin" />Connecting to GitHub...
+        </div>
       case 'failed':
-        return (
-          <p className="text-xs text-red-500">
-            Failed to fetch repository. Please check the URL and permissions.
-          </p>
-        )
-      default:
-        return null
+        return <p className="text-xs text-red-500">
+          Failed to fetch repository. Please check the URL and permissions.
+        </p>
+      default: return null
     }
   }
 
@@ -158,13 +136,9 @@ export default function Dashboard() {
             <img src="/logo.png" alt="GitCrafts" className="h-8 w-8" />
             <h1 className="text-2xl font-bold text-gray-900">GitCrafts</h1>
           </div>
-          
           <div className="flex items-center gap-4">
             {!subscription?.subscribed && (
-              <Button 
-                onClick={() => navigate('/pricing')}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
+              <Button onClick={() => navigate('/pricing')} className="bg-orange-600 hover:bg-orange-700">
                 Upgrade to Pro
               </Button>
             )}
@@ -189,15 +163,13 @@ export default function Dashboard() {
         ) : repos.length === 0 ? (
           <Card className="shadow-lg">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 text-orange-400 mb-4" />
               <p className="text-gray-700 font-medium mb-2">No repositories yet</p>
-              <p className="text-sm text-gray-500 mb-6">Add your first repository to get started</p>
               <AddRepoModal onSuccess={handleRepoAdded} />
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {repos.map((repo) => (
+            {repos.map(repo => (
               <Card key={repo.id} className="hover:shadow-lg transition-all border-2 hover:border-orange-200">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -209,12 +181,7 @@ export default function Dashboard() {
                         Added {new Date(repo.created_at).toLocaleDateString()}
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(repo.id)}
-                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(repo.id)} className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -228,26 +195,15 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Status message */}
                     {getStatusMessage(repo.clone_status)}
 
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        asChild
-                      >
-                        <a 
-                          href={repo.repo_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={repo.repo_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3 w-3 mr-1" />View
                         </a>
                       </Button>
-                      
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
