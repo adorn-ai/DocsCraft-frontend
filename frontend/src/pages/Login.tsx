@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Github } from 'lucide-react'
 
 export default function Login() {
-  const { signInWithGithub, signInWithGoogle } = useAuth()
+  // return signInWithGoogle when integrating Connect Github to the app
+  const { signInWithGithub } = useAuth()
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-50">

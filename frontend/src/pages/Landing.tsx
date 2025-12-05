@@ -19,11 +19,7 @@ export default function Landing() {
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img
-              src="/logo.png"
-              alt="GitCrafts"
-              className="h-20 w-20"
-            />
+            <img src="/logo.png" alt="GitCrafts" className="h-20 w-20" />
             <span className="text-2xl font-bold text-gray-900">GitCrafts</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -295,10 +291,24 @@ export default function Landing() {
               </div>
               <CardContent className="p-8">
                 <h3 className="text-2xl font-bold mb-2">Pro</h3>
-                <p className="text-gray-600 mb-6">For developers with heavy documentation needs</p>
+                <p className="text-gray-600 mb-6">
+                  For developers with heavy documentation needs
+                </p>
                 <div className="mb-8">
-                  <span className="text-5xl font-bold">$ 5.99</span>
-                  <span className="text-gray-600">/month</span>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-3xl text-gray-400 line-through">
+                      $ 7.99
+                    </span>
+                    <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                      25% OFF
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-5xl font-bold text-orange-600">
+                      $ 5.99
+                    </span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
                 </div>
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start gap-3">

@@ -213,8 +213,16 @@ export default function Pricing() {
               <CardTitle className="text-2xl">Pro</CardTitle>
               <CardDescription>For big time developers</CardDescription>
               <div className="mt-4">
-                <span className="text-4xl font-bold">$5.99</span>
-                <span className="text-gray-600">/month</span>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-2xl text-gray-400 line-through">$7.99</span>
+                  <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    25% OFF
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-orange-600">$5.99</span>
+                  <span className="text-gray-600">/month</span>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
