@@ -1,15 +1,16 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
-import { MFAChallenge } from '@/components/MFAChallenge'
+import { createContext, useContext, useEffect, useState } from "react";
+import type { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import { MFAChallenge } from "@/components/MFAChallenge";
+import { Loader2 } from "lucide-react";
 
 interface AuthContextType {
-  user: User | null
-  session: Session | null
-  loading: boolean
-  signOut: () => Promise<void>
-  signInWithGithub: () => Promise<void>
-  signInWithGoogle: () => Promise<void>
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+  signInWithGithub: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,155 +19,133 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   signInWithGithub: async () => {},
-  signInWithGoogle: async () => {}
-})
+  signInWithGoogle: async () => {},
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [needsMFA, setNeedsMFA] = useState(false)
-  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [needsMFA, setNeedsMFA] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        // Check if user has MFA enabled
-        const { data: factors } = await supabase.auth.mfa.listFactors()
-        const verifiedFactor = factors?.totp?.find(f => f.status === 'verified')
-        
-        if (verifiedFactor) {
-          // Check if already verified in this session
+    let mounted = true;
+
+    async function init() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        setSession(session ?? null);
+        setUser(session?.user ?? null);
+
+        // ---- CHECK MFA ----
+        if (session) {
           try {
-            const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-            if (data && data.currentLevel !== 'aal2') {
-              // Need MFA verification
-              setNeedsMFA(true)
-              setMfaFactorId(verifiedFactor.id)
-              setLoading(false)
-              return
+            const { data: factors } = await supabase.auth.mfa.listFactors();
+            const verifiedFactor = factors?.totp?.find(
+              (f) => f.status === "verified"
+            );
+
+            if (verifiedFactor) {
+              const { data: aalData } =
+                await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+              if (aalData?.currentLevel !== "aal2") {
+                const { data: challenge } = await supabase.auth.mfa.challenge({
+                  factorId: verifiedFactor.id,
+                });
+
+                if (challenge) {
+                  setNeedsMFA(true);
+                  setMfaFactorId(verifiedFactor.id);
+                  return; // ⛔ stop normal flow
+                }
+              }
             }
           } catch (e) {
-            // If we can't get AAL, assume MFA is needed
-            setNeedsMFA(true)
-            setMfaFactorId(verifiedFactor.id)
-            setLoading(false)
-            return
+            console.error("MFA check error", e);
           }
         }
+      } catch (e) {
+        console.error("Auth init error", e);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      
-      setSession(session)
-      setUser(session?.user ?? null)
-      
-      // Store GitHub token if available
-      if (session?.provider_token) {
-        const isGitHubToken = session.provider_token.startsWith('gho_') || 
-                             session.provider_token.startsWith('ghp_') ||
-                             session.provider_token.startsWith('github_pat_')
-        
-        if (isGitHubToken) {
-          console.log('Storing GitHub token from session')
-          localStorage.setItem('github_token', session.provider_token)
-        } else {
-          console.log('Provider token is not a GitHub token, skipping storage')
-          localStorage.removeItem('github_token')
-        }
-      }
-      
-      setLoading(false)
-    })
+    }
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('Auth state changed:', _event)
-      
-      if (_event === 'SIGNED_IN' && session) {
-        // Check if user has MFA enabled
-        const { data: factors } = await supabase.auth.mfa.listFactors()
-        const verifiedFactor = factors?.totp?.find(f => f.status === 'verified')
-        
-        if (verifiedFactor) {
-          try {
-            const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-            if (data && data.currentLevel !== 'aal2') {
-              // Need MFA verification
-              setNeedsMFA(true)
-              setMfaFactorId(verifiedFactor.id)
-              return
-            }
-          } catch (e) {
-            // If we can't get AAL, assume MFA is needed
-            setNeedsMFA(true)
-            setMfaFactorId(verifiedFactor.id)
-            return
-          }
-        }
-      }
-      
-      setSession(session)
-      setUser(session?.user ?? null)
-      setNeedsMFA(false)
-      setMfaFactorId(null)
-      
-      // Store or remove GitHub token based on auth state
-      if (session?.provider_token) {
-        const isGitHubToken = session.provider_token.startsWith('gho_') || 
-                             session.provider_token.startsWith('ghp_') ||
-                             session.provider_token.startsWith('github_pat_')
-        
-        if (isGitHubToken) {
-          console.log('Storing GitHub token:', session.provider_token.substring(0, 20) + '...')
-          localStorage.setItem('github_token', session.provider_token)
-        } else {
-          console.log('Token is not a GitHub token (starts with:', session.provider_token.substring(0, 10) + '...)')
-        }
-      } else if (_event === 'SIGNED_OUT') {
-        console.log('Removing GitHub token')
-        localStorage.removeItem('github_token')
-      }
-    })
+    init();
 
-    return () => subscription.unsubscribe()
-  }, [])
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      setSession(session ?? null);
+      setUser(session?.user ?? null);
+
+      // Always end loading state after auth event
+      setLoading(false);
+
+      if (event === "SIGNED_OUT") {
+        localStorage.removeItem("github_token");
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    localStorage.removeItem('github_token')
-  }
+    await supabase.auth.signOut();
+    localStorage.removeItem("github_token");
+  };
 
   const signInWithGithub = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
+      provider: "github",
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
-        scopes: 'repo'
-      }
-    })
+        scopes: "repo",
+      },
+    });
 
     if (error) {
-      console.error('GitHub login error:', error)
-      throw error
+      console.error("GitHub login error:", error);
+      throw error;
     }
-  }
+  };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
 
     if (error) {
-      console.error('Google login error:', error)
-      throw error
+      console.error("Google login error:", error);
+      throw error;
     }
-  }
+  };
 
+  // Better loading screen
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-orange-600 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Loading GitCrafts...</p>
+        </div>
+      </div>
+    );
   }
 
   // Show MFA challenge if needed
@@ -175,33 +154,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       <MFAChallenge
         factorId={mfaFactorId}
         onSuccess={async () => {
+          console.log("MFA verification successful");
           // Refresh session after MFA
-          const { data: { session } } = await supabase.auth.getSession()
-          setSession(session)
-          setUser(session?.user ?? null)
-          setNeedsMFA(false)
-          setMfaFactorId(null)
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          setSession(session);
+          setUser(session?.user ?? null);
+          setNeedsMFA(false);
+          setMfaFactorId(null);
         }}
         onCancel={async () => {
-          await supabase.auth.signOut()
-          setNeedsMFA(false)
-          setMfaFactorId(null)
+          console.log("MFA cancelled");
+          await supabase.auth.signOut();
+          setNeedsMFA(false);
+          setMfaFactorId(null);
         }}
       />
-    )
+    );
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut, signInWithGithub, signInWithGoogle }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        signOut,
+        signInWithGithub,
+        signInWithGoogle,
+      }}
+    >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
+    throw new Error("useAuth must be used within AuthProvider");
   }
-  return context
+  return context;
 }
