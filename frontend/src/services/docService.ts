@@ -19,13 +19,29 @@ export const generateDocs = async (repoId: string, docTypes: string[]) => {
     body: JSON.stringify({
       repo_id: repoId,
       doc_types: docTypes,
-      github_token: githubToken  // Pass GitHub token
+      github_token: githubToken
     })
   })
 
   if (!response.ok) {
     const error = await response.json()
-    throw new Error(error.detail || 'Failed to generate documentation')
+    
+    // Handle structured error responses
+    if (error.detail && typeof error.detail === 'object') {
+      if (error.detail.upgrade_required) {
+        const err: any = new Error(error.detail.message)
+        err.upgrade_required = true
+        err.error_data = error.detail
+        throw err
+      }
+    }
+    
+    // Handle string error messages
+    const errorMessage = typeof error.detail === 'string' 
+      ? error.detail 
+      : error.detail?.message || 'Failed to generate documentation'
+    
+    throw new Error(errorMessage)
   }
 
   return await response.json()

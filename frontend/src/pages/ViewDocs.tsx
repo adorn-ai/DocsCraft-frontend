@@ -37,7 +37,6 @@ export default function ViewDocs() {
         return;
       }
 
-      // Get job details
       const response = await fetch(`${API_URL}/docs/job/${jobId}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -52,11 +51,9 @@ export default function ViewDocs() {
       setJob(jobData);
 
       if (jobData.status === "completed") {
-        // Parse storage paths
         const storagePaths = JSON.parse(jobData.storage_path);
         const filenames = Object.keys(storagePaths);
         
-        // Download all files
         const docsObj: Record<string, string> = {};
         
         for (const filename of filenames) {
@@ -81,7 +78,6 @@ export default function ViewDocs() {
         
         setDocs(docsObj);
         
-        // Set first file as active tab
         if (filenames.length > 0 && !activeTab) {
           setActiveTab(filenames[0]);
         }
@@ -110,7 +106,6 @@ export default function ViewDocs() {
         return;
       }
 
-      // Download ZIP with all files
       const response = await fetch(`${API_URL}/docs/job/${jobId}/download`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -181,11 +176,11 @@ export default function ViewDocs() {
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 mb-4">
-              <AlertCircle className="h-6 w-6 text-red-500" />
+              <AlertCircle className="h-6 w-6 text-red-500 flex-shrink-0" />
               <p className="text-gray-800 font-medium">
                 {error || "Job not found"}
               </p>
@@ -201,8 +196,8 @@ export default function ViewDocs() {
 
   if (Object.keys(docs).length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
           <CardContent className="pt-6">
             <p className="text-center text-gray-600 mb-4">
               No documentation content available
@@ -221,25 +216,29 @@ export default function ViewDocs() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+        <div className="max-w-5xl mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <Button variant="ghost" onClick={() => navigate("/dashboard")} className="w-full sm:w-auto">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <Button onClick={handleDownloadAll}>
+          <Button onClick={handleDownloadAll} className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
             Download All
           </Button>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 w-full flex-wrap h-auto gap-2 bg-transparent p-0">
             {filenames.map((filename) => (
-              <TabsTrigger key={filename} value={filename}>
-                <FileText className="h-4 w-4 mr-2" />
-                {filename}
+              <TabsTrigger 
+                key={filename} 
+                value={filename}
+                className="flex-1 min-w-[120px] data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{filename}</span>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -247,11 +246,12 @@ export default function ViewDocs() {
           {filenames.map((filename) => (
             <TabsContent key={filename} value={filename}>
               <Card>
-                <div className="p-4 border-b flex justify-end gap-2">
+                <div className="p-3 sm:p-4 border-b flex flex-col sm:flex-row justify-end gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopy(filename)}
+                    className="w-full sm:w-auto"
                   >
                     <Copy className="mr-2 h-4 w-4" />
                     Copy
@@ -259,35 +259,66 @@ export default function ViewDocs() {
                   <Button
                     size="sm"
                     onClick={() => handleDownloadSingle(filename)}
+                    className="w-full sm:w-auto"
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </Button>
                 </div>
-                <CardContent className="p-8">
-                  <div className="prose prose-gray max-w-none">
+                <CardContent className="p-4 sm:p-8">
+                  {/* Mobile-optimized prose styles */}
+                  <div className="prose prose-sm sm:prose prose-gray max-w-none
+                    prose-headings:break-words
+                    prose-p:break-words
+                    prose-code:break-all
+                    prose-pre:overflow-x-auto
+                    prose-table:block
+                    prose-table:overflow-x-auto
+                    prose-table:max-w-full
+                    prose-td:break-words
+                    prose-th:break-words
+                  ">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
+                        // Responsive code blocks
                         code: ({ node, className, children, ...props }) => {
                           const match = /language-(\w+)/.exec(className || "");
                           const language = match ? match[1] : "";
                           const isInline = !className;
 
                           return !isInline ? (
-                            <SyntaxHighlighter
-                              style={oneDark}
-                              language={language}
-                              PreTag="div"
-                            >
-                              {String(children).replace(/\n$/, "")}
-                            </SyntaxHighlighter>
+                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                              <SyntaxHighlighter
+                                style={oneDark}
+                                language={language}
+                                PreTag="div"
+                                customStyle={{
+                                  margin: 0,
+                                  borderRadius: '0.5rem',
+                                  fontSize: '0.875rem',
+                                }}
+                                wrapLongLines={true}
+                              >
+                                {String(children).replace(/\n$/, "")}
+                              </SyntaxHighlighter>
+                            </div>
                           ) : (
-                            <code className={className} {...props}>
+                            <code className={`${className} break-all`} {...props}>
                               {children}
                             </code>
                           );
                         },
+                        // Responsive tables
+                        table: ({ node, ...props }) => (
+                          <div className="overflow-x-auto -mx-4 sm:mx-0 my-4">
+                            <table className="min-w-full" {...props} />
+                          </div>
+                        ),
+                        // Break long links
+                        a: ({ node, ...props }) => (
+                          <a className="break-all" {...props} />
+                        ),
                       }}
                     >
                       {docs[filename]}

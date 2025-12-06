@@ -15,16 +15,27 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 interface AddRepoModalProps {
   onSuccess: () => void
 }
 
 export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [repoUrl, setRepoUrl] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const checkGitHubConnection = () => {
+    const githubToken = localStorage.getItem('github_token')
+    return githubToken && (
+      githubToken.startsWith('gho_') || 
+      githubToken.startsWith('ghp_') || 
+      githubToken.startsWith('github_pat_')
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,6 +51,22 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
     if (!repoUrl.includes('github.com')) {
       toast.error('Invalid URL', {
         description: 'Please enter a valid GitHub repository URL'
+      })
+      return
+    }
+
+    // Check GitHub connection for private repos
+    if (isPrivate && !checkGitHubConnection()) {
+      toast.error('GitHub Not Connected', {
+        description: 'Please connect your GitHub account in Settings to add private repositories',
+        action: {
+          label: 'Go to Settings',
+          onClick: () => {
+            setOpen(false)
+            navigate('/settings')
+          }
+        },
+        duration: 5000
       })
       return
     }
@@ -61,23 +88,64 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
     } catch (error: any) {
       console.error('Add repo error:', error)
       
+      // Parse error response
+      let errorDetail = error.message
+      try {
+        const errorResponse = JSON.parse(error.message.split('detail')[1] || '{}')
+        if (errorResponse.upgrade_required) {
+          toast.error(errorResponse.error || 'Upgrade Required', {
+            description: errorResponse.message,
+            action: {
+              label: 'Upgrade to Pro',
+              onClick: () => {
+                setOpen(false)
+                navigate('/pricing')
+              }
+            },
+            duration: 6000
+          })
+          return
+        }
+      } catch (e) {
+        // Not a structured error, continue with normal handling
+      }
+      
       // Handle specific error cases
-      if (error.message.includes('already added')) {
+      if (errorDetail.includes('already added')) {
         toast.error('Duplicate Repository', {
           description: 'This repository has already been added'
         })
-      } else if (error.message.includes('authentication required')) {
+      } else if (errorDetail.includes('Private repositories are only available')) {
+        toast.error('Pro Plan Required', {
+          description: 'Private repositories are only available on Pro plan',
+          action: {
+            label: 'Upgrade Now',
+            onClick: () => {
+              setOpen(false)
+              navigate('/pricing')
+            }
+          },
+          duration: 6000
+        })
+      } else if (errorDetail.includes('authentication required')) {
         toast.error('Authentication Required', {
-          description: 'Please ensure you are logged in with GitHub and have granted repository access',
+          description: 'Please connect your GitHub account in Settings',
+          action: {
+            label: 'Go to Settings',
+            onClick: () => {
+              setOpen(false)
+              navigate('/settings')
+            }
+          },
           duration: 5000
         })
-      } else if (error.message.includes('Invalid GitHub URL')) {
+      } else if (errorDetail.includes('Invalid GitHub URL')) {
         toast.error('Invalid URL', {
           description: 'Please check the repository URL and try again'
         })
       } else {
         toast.error('Failed to Add Repository', {
-          description: error.message || 'An unexpected error occurred'
+          description: errorDetail || 'An unexpected error occurred'
         })
       }
     } finally {
@@ -132,15 +200,34 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
               </Label>
             </div>
 
-            {isPrivate && (
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-blue-800">
-                  <p className="font-medium mb-1">Private Repository Access</p>
+            {isPrivate && !checkGitHubConnection() && (
+              <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-orange-800">
+                  <p className="font-medium mb-1">GitHub Connection Required</p>
                   <p>
-                    Make sure you're logged in with GitHub and have granted repository access permissions. 
-                    If you're having issues, try logging out and logging back in.
+                    You need to connect your GitHub account to access private repositories.{' '}
+                    <button 
+                      type="button"
+                      className="underline font-medium"
+                      onClick={() => {
+                        setOpen(false)
+                        navigate('/settings')
+                      }}
+                    >
+                      Go to Settings
+                    </button>
                   </p>
+                </div>
+              </div>
+            )}
+
+            {isPrivate && checkGitHubConnection() && (
+              <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-green-800">
+                  <p className="font-medium">GitHub Connected</p>
+                  <p>You can add private repositories</p>
                 </div>
               </div>
             )}

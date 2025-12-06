@@ -9,6 +9,7 @@ import ViewDocs from "./pages/ViewDocs";
 import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import GithubCallback from "./pages/GithubCallback";
 import PaymentCallback from "./pages/PaymentCallback";
 import Pricing from "./pages/Pricing";
 
@@ -23,7 +24,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
 
           <Route
-            path="/dashboard" 
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -75,6 +76,13 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/github/callback" 
+          element={
+            <ProtectedRoute>
+              <GithubCallback />
+            </ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

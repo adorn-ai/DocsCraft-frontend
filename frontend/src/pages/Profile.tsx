@@ -217,9 +217,9 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
-
-        {/* Usage Statistics */}
-        <Card>
+          
+        {/* 
+                <Card>
           <CardHeader>
             <CardTitle>Usage Statistics</CardTitle>
             <CardDescription>Your documentation generation activity</CardDescription>
@@ -237,6 +237,7 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+        */}
       </main>
     </div>
   )

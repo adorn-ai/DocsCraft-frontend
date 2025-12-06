@@ -6,11 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { ConnectGitHub } from '@/components/ConnectGitHub'
+import { MFASetup } from '@/components/MFASetup'
 import { 
   ArrowLeft, 
   Crown, 
   Bell, 
-  Github, 
   LogOut, 
   Trash2,
   Shield,
@@ -41,7 +42,7 @@ interface Subscription {
 }
 
 export default function Settings() {
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
   const navigate = useNavigate()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
@@ -203,6 +204,9 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* GitHub Connection */}
+        <ConnectGitHub />
+
         {/* Notifications */}
         <Card>
           <CardHeader>
@@ -238,39 +242,16 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Connected Accounts */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Github className="h-5 w-5" />
-              Connected Accounts
-            </CardTitle>
-            <CardDescription>Manage your connected services</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Github className="h-5 w-5" />
-                <div>
-                  <p className="font-medium">GitHub</p>
-                  <p className="text-sm text-gray-500">{user?.email}</p>
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Connected
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Connected Accounts - Removed, now using ConnectGitHub component */}
 
         {/* Security */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Security
+              Password & Security
             </CardTitle>
-            <CardDescription>Manage your account security</CardDescription>
+            <CardDescription>Manage your account security settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -282,17 +263,11 @@ export default function Settings() {
                 Change
               </Button>
             </div>
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-gray-500">Not enabled</p>
-              </div>
-              <Button variant="outline" size="sm">
-                Enable
-              </Button>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Two-Factor Authentication */}
+        <MFASetup />
 
         {/* Danger Zone */}
         <Card className="border-red-200">

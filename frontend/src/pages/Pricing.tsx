@@ -163,7 +163,7 @@ export default function Pricing() {
               <CardTitle className="text-2xl">Free</CardTitle>
               <CardDescription>Perfect for trying out</CardDescription>
               <div className="mt-4">
-                <span className="text-4xl font-bold">KES 0</span>
+                <span className="text-4xl font-bold">$ 0</span>
                 <span className="text-gray-600">/month</span>
               </div>
             </CardHeader>
