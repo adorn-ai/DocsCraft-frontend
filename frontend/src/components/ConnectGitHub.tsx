@@ -51,7 +51,7 @@ export function ConnectGitHub() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${window.location.origin}/github-callback`,
+          redirectTo: `${window.location.origin}/github/callback`,
           scopes: 'repo',
           skipBrowserRedirect: false,
         },

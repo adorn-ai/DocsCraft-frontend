@@ -369,19 +369,22 @@ export default function Landing() {
               <span className="text-xl font-bold">GitCrafts</span>
             </div>
             <div className="flex gap-8">
-              <a href="#" className="text-gray-400 hover:text-white transition">
+              <a href="/login" className="text-gray-400 hover:text-white transition">
+                Login
+              </a>
+              <a href="/terms" className="text-gray-400 hover:text-white transition">
+                Terms and Conditions
+              </a>
+              <a href="/privacy" className="text-gray-400 hover:text-white transition">
                 Privacy
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                Terms
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
+              <a href="/contact" className="text-gray-400 hover:text-white transition">
                 Contact
               </a>
             </div>
           </div>
           <div className="mt-8 text-center text-gray-400 text-sm">
-            © 2024 GitCrafts. All rights reserved.
+            © 2025 GitCrafts. All rights reserved.
           </div>
         </div>
       </footer>
