@@ -24,19 +24,19 @@ export default function Landing() {
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a
-              href="#features"
+              href="/features"
               className="text-gray-600 hover:text-orange-600 transition"
             >
               Features
             </a>
             <a
-              href="#pricing"
+              href="/pricing"
               className="text-gray-600 hover:text-orange-600 transition"
             >
               Pricing
             </a>
             <a
-              href="#how-it-works"
+              href="/how-it-works"
               className="text-gray-600 hover:text-orange-600 transition"
             >
               How it Works

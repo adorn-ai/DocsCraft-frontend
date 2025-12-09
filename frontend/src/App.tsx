@@ -25,6 +25,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/github/callback" element={<GithubCallback />} />
           <Route path="/" element={<Landing />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
@@ -84,13 +85,6 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
-          <Route path="/github/callback" 
-          element={
-            <ProtectedRoute>
-              <GithubCallback />
-            </ProtectedRoute>
-          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
