@@ -3,6 +3,7 @@ import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { MFAChallenge } from "@/components/MFAChallenge";
 import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [needsMFA, setNeedsMFA] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -93,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (event === "SIGNED_OUT") {
         localStorage.removeItem("github_token");
+        navigate("/login");
       }
     });
 
@@ -100,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -111,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/github/callback`,
+        redirectTo: `${window.location.origin}/dashboard`,
         scopes: "repo",
       },
     });
@@ -163,12 +166,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null);
           setNeedsMFA(false);
           setMfaFactorId(null);
+          
+          // 🔥 FIX: Redirect to dashboard after successful MFA
+          navigate("/dashboard");
         }}
         onCancel={async () => {
           console.log("MFA cancelled");
           await supabase.auth.signOut();
           setNeedsMFA(false);
           setMfaFactorId(null);
+          navigate("/login");
         }}
       />
     );
