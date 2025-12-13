@@ -1,127 +1,176 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Check, Loader2, Crown, Calendar } from 'lucide-react'
-import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Check, Loader2, Crown, Calendar } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { CouponInput } from "@/components/CouponInput";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+// Pricing configuration
+const EXCHANGE_RATE = 129.6; // 1 USD = 129.6 KES (update as needed)
+const BASE_PRICE_USD = 5.99;
+const BASE_PRICE_KES = 776; // KES price for Paystack
 
 interface Subscription {
-  subscribed: boolean
+  subscribed: boolean;
   subscription?: {
-    status: string
-    created_at: string
-    amount: number
-  }
+    status: string;
+    created_at: string;
+    amount: number;
+  };
 }
 
 export default function Pricing() {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [checkingSubscription, setCheckingSubscription] = useState(true)
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+
+  // Coupon state (KES for backend, USD for display)
+  const [finalPriceKES, setFinalPriceKES] = useState(BASE_PRICE_KES);
+  const [finalPriceUSD, setFinalPriceUSD] = useState(BASE_PRICE_USD);
+  const [discountAmountUSD, setDiscountAmountUSD] = useState(0);
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (user) {
-      fetchSubscription()
+      fetchSubscription();
     } else {
-      setCheckingSubscription(false)
+      setCheckingSubscription(false);
     }
-  }, [user])
+  }, [user]);
 
   const fetchSubscription = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const response = await fetch(`${API_URL}/paystack/subscription`, {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      })
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        setSubscription(data)
+        const data = await response.json();
+        setSubscription(data);
       }
     } catch (error) {
-      console.error('Failed to fetch subscription:', error)
+      console.error("Failed to fetch subscription:", error);
     } finally {
-      setCheckingSubscription(false)
+      setCheckingSubscription(false);
     }
-  }
+  };
 
   const calculateNextRenewal = (createdAt: string) => {
-    const created = new Date(createdAt)
-    const nextRenewal = new Date(created)
-    nextRenewal.setMonth(nextRenewal.getMonth() + 1)
-    return nextRenewal.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
-  }
+    const created = new Date(createdAt);
+    const nextRenewal = new Date(created);
+    nextRenewal.setMonth(nextRenewal.getMonth() + 1);
+    return nextRenewal.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const kesToUsd = (kes: number): number => {
+    return kes / EXCHANGE_RATE;
+  };
+
+  const handleCouponApplied = (
+    discountKES: number,
+    finalKES: number,
+    code: string
+  ) => {
+    setDiscountAmountUSD(kesToUsd(discountKES));
+    setFinalPriceKES(finalKES);
+    setFinalPriceUSD(kesToUsd(finalKES));
+    setAppliedCouponCode(code);
+  };
+
+  const handleCouponRemoved = () => {
+    setDiscountAmountUSD(0);
+    setFinalPriceKES(BASE_PRICE_KES);
+    setFinalPriceUSD(BASE_PRICE_USD);
+    setAppliedCouponCode(null);
+  };
 
   const handleUpgrade = async () => {
     if (!user) {
-      navigate('/login')
-      return
+      navigate("/login");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       const response = await fetch(`${API_URL}/paystack/initialize-payment`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({
-          plan: 'pro'
-        })
-      })
+          plan: "pro",
+          coupon_code: appliedCouponCode,
+          final_amount: finalPriceKES, // Send KES amount to backend
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to initialize payment')
+        throw new Error("Failed to initialize payment");
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
       // Redirect to Paystack checkout
-      window.location.href = data.authorization_url
-
+      window.location.href = data.authorization_url;
     } catch (error: any) {
-      toast.error('Payment Error', {
-        description: error.message
-      })
-      setLoading(false)
+      toast.error("Payment Error", {
+        description: error.message,
+      });
+      setLoading(false);
     }
-  }
+  };
 
   if (checkingSubscription) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             ← Back to Dashboard
           </Button>
         </div>
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 py-16">
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
           <p className="text-xl text-gray-600">
@@ -129,7 +178,7 @@ export default function Pricing() {
           </p>
         </div>
 
-        {/* Show subscription status if user is subscribed */}
+        {/* Active Subscription Banner */}
         {subscription?.subscribed && subscription.subscription && (
           <Card className="mb-8 border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100">
             <CardContent className="pt-6">
@@ -147,7 +196,10 @@ export default function Pricing() {
                   <div className="flex items-center gap-2 text-orange-700">
                     <Calendar className="h-4 w-4" />
                     <span className="text-sm font-medium">
-                      Next renewal: {calculateNextRenewal(subscription.subscription.created_at)}
+                      Next renewal:{" "}
+                      {calculateNextRenewal(
+                        subscription.subscription.created_at
+                      )}
                     </span>
                   </div>
                 </div>
@@ -156,14 +208,15 @@ export default function Pricing() {
           </Card>
         )}
 
+        {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Plan */}
-          <Card className={subscription?.subscribed ? 'opacity-60' : ''}>
+          <Card className={subscription?.subscribed ? "opacity-60" : ""}>
             <CardHeader>
               <CardTitle className="text-2xl">Free</CardTitle>
               <CardDescription>Perfect for trying out</CardDescription>
               <div className="mt-4">
-                <span className="text-4xl font-bold">$ 0</span>
+                <span className="text-4xl font-bold">$0</span>
                 <span className="text-gray-600">/month</span>
               </div>
             </CardHeader>
@@ -182,18 +235,25 @@ export default function Pricing() {
                   <span>Public repositories</span>
                 </li>
               </ul>
-              <Button 
-                variant="outline" 
-                className="w-full" 
+              <Button
+                variant="outline"
+                className="w-full"
                 disabled={!subscription?.subscribed}
               >
-                {subscription?.subscribed ? 'Subscribed to Pro' : 'Current Plan'}
+                {subscription?.subscribed
+                  ? "Subscribed to Pro"
+                  : "Current Plan"}
               </Button>
             </CardContent>
           </Card>
 
           {/* Pro Plan */}
-          <Card className={`border-2 border-primary relative ${subscription?.subscribed ? 'ring-2 ring-orange-500' : ''}`}>
+          <Card
+            className={`border-2 border-primary relative ${
+              subscription?.subscribed ? "ring-2 ring-orange-500" : ""
+            }`}
+          >
+            {/* Badge */}
             {!subscription?.subscribed && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <span className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
@@ -209,23 +269,43 @@ export default function Pricing() {
                 </span>
               </div>
             )}
+
             <CardHeader>
               <CardTitle className="text-2xl">Pro</CardTitle>
               <CardDescription>For big time developers</CardDescription>
               <div className="mt-4">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-2xl text-gray-400 line-through">$7.99</span>
-                  <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                    25% OFF
-                  </span>
-                </div>
+                {/* Show discount if applied */}
+                {discountAmountUSD > 0 && (
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl text-gray-400 line-through">
+                      ${BASE_PRICE_USD.toFixed(2)}
+                    </span>
+                    <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                      SAVE ${discountAmountUSD.toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-orange-600">$5.99</span>
+                  <span
+                    className={`text-4xl font-bold ${
+                      discountAmountUSD > 0
+                        ? "text-green-600"
+                        : "text-orange-600"
+                    }`}
+                  >
+                    ${finalPriceUSD.toFixed(2)}
+                  </span>
                   <span className="text-gray-600">/month</span>
                 </div>
+                {/* Show KES equivalent */}
+                <p className="text-sm text-gray-500 mt-2">
+                  ~KES {finalPriceKES.toFixed(2)}
+                </p>
               </div>
             </CardHeader>
+
             <CardContent>
+              {/* Features List */}
               <ul className="space-y-3 mb-6">
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -252,8 +332,30 @@ export default function Pricing() {
                   <span>Advanced customization</span>
                 </li>
               </ul>
-              <Button 
-                className={`w-full ${subscription?.subscribed ? 'bg-green-600 hover:bg-green-700' : 'bg-gradient-to-r from-orange-500 to-orange-600'}`}
+
+              {/* Coupon Input - Only show if not subscribed */}
+              {!subscription?.subscribed && (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+                  <p className="text-sm font-medium mb-3">
+                    Have a coupon code?
+                  </p>
+                  <CouponInput
+                    subscriptionAmount={BASE_PRICE_KES} // Pass KES to backend
+                    onCouponApplied={handleCouponApplied}
+                    onCouponRemoved={handleCouponRemoved}
+                    disabled={loading}
+                    exchangeRate={EXCHANGE_RATE} // Pass exchange rate
+                  />
+                </div>
+              )}
+
+              {/* Subscribe Button */}
+              <Button
+                className={`w-full ${
+                  subscription?.subscribed
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-gradient-to-r from-orange-500 to-orange-600"
+                }`}
                 onClick={handleUpgrade}
                 disabled={loading || subscription?.subscribed}
               >
@@ -268,18 +370,26 @@ export default function Pricing() {
                     Subscribed
                   </>
                 ) : (
-                  "Upgrade to Pro"
+                  <>Upgrade to Pro - ${finalPriceUSD.toFixed(2)}/mo</>
                 )}
               </Button>
             </CardContent>
           </Card>
         </div>
 
+        {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-600">
-          <p>Need help choosing? <button className="text-orange-600 hover:underline">Contact us</button></p>
-          <p className="mt-2">Powered by Paystack • Supports M-Pesa, Card, Bank Transfer</p>
+          <p>
+            Need help choosing?{" "}
+            <button className="text-orange-600 hover:underline">
+              Contact us
+            </button>
+          </p>
+          <p className="mt-2">
+            Powered by Paystack • Supports M-Pesa, Card, Bank Transfer
+          </p>
         </div>
       </main>
     </div>
-  )
+  );
 }
