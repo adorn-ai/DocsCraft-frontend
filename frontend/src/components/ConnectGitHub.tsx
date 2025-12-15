@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Github, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Github, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -9,6 +9,7 @@ export function ConnectGitHub() {
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [signedInWithGitHub, setSignedInWithGitHub] = useState(false);
 
   useEffect(() => {
     checkGitHubConnection();
@@ -24,6 +25,19 @@ export function ConnectGitHub() {
         return;
       }
 
+      // Check if user signed in with GitHub
+      const provider = session.user.app_metadata?.provider || session.user.user_metadata?.provider;
+      const isGitHubAuth = provider === 'github';
+      setSignedInWithGitHub(isGitHubAuth);
+
+      // If signed in with GitHub, they're automatically connected
+      if (isGitHubAuth) {
+        setIsConnected(true);
+        setLoading(false);
+        return;
+      }
+
+      // For Google sign-in users, check if they've connected GitHub
       const { data: tokenData, error } = await supabase
         .from('github_tokens')
         .select('*')
@@ -71,6 +85,13 @@ export function ConnectGitHub() {
   };
 
   const handleDisconnectGitHub = async () => {
+    if (signedInWithGitHub) {
+      toast.error('Cannot disconnect', {
+        description: 'You signed in with GitHub. To disconnect, please sign out and sign in with Google.'
+      });
+      return;
+    }
+
     if (!confirm('Are you sure you want to disconnect GitHub? You will lose access to private repositories.')) return;
 
     try {
@@ -111,12 +132,33 @@ export function ConnectGitHub() {
               <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
               <div className="flex-1">
                 <p className="font-medium text-green-900">GitHub Connected</p>
-                <p className="text-sm text-green-700">You can access private repositories</p>
+                <p className="text-sm text-green-700">
+                  {signedInWithGitHub 
+                    ? 'You signed in with GitHub - automatically connected'
+                    : 'You can access private repositories'
+                  }
+                </p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleDisconnectGitHub} className="w-full">
-              Disconnect GitHub
-            </Button>
+            
+            {signedInWithGitHub ? (
+              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-blue-900">
+                    You're signed in with GitHub. To disconnect, sign out and sign in with Google instead.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={handleDisconnectGitHub} 
+                className="w-full"
+              >
+                Disconnect GitHub
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -128,14 +170,18 @@ export function ConnectGitHub() {
                   To access private repositories, you need to authenticate with GitHub.
                 </p>
                 <p className="text-xs text-orange-600">
-                  Note: If you signed in with Google, you'll need to sign in with GitHub to get access to private repos.
+                  Note: You signed in with Google, so you'll need to connect GitHub separately for private repo access.
                 </p>
               </div>
             </div>
-            <Button onClick={handleConnectGitHub} disabled={connecting} className="w-full bg-gray-900 hover:bg-gray-800">
+            <Button 
+              onClick={handleConnectGitHub} 
+              disabled={connecting} 
+              className="w-full bg-gray-900 hover:bg-gray-800"
+            >
               {connecting ? <>Redirecting to GitHub...</> : <>
                 <Github className="mr-2 h-4 w-4" />
-                Sign in with GitHub for Private Repos
+                Connect GitHub for Private Repos
               </>}
             </Button>
           </div>
