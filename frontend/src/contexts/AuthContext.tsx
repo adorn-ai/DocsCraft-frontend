@@ -80,6 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     init();
 
+    // ---------------------------------------------------------
+    //  AUTH STATE LISTENER (Updated)
+    // ---------------------------------------------------------
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -87,6 +90,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setSession(session ?? null);
       setUser(session?.user ?? null);
+
+      // >>>>> START NEW CODE: SYNC GITHUB TOKEN <<<<<
+      // Whenever a session updates (login, refresh) and contains a provider_token,
+      // save it immediately to the database so repoService can find it later.
+      if (session?.provider_token && session?.user?.id) {
+        console.log("Found GitHub provider token, syncing to database...");
+        try {
+          // Attempt to save token directly to DB to ensure repoService finds it
+          const { error } = await supabase
+            .from("github_tokens")
+            .upsert(
+              {
+                user_id: session.user.id,
+                token: session.provider_token,
+                // Add updated_at if your table has this column, otherwise remove this line
+                updated_at: new Date().toISOString(), 
+              },
+              { onConflict: "user_id" }
+            );
+
+          if (error) {
+            console.error("Error syncing GitHub token to DB:", error);
+          } else {
+            console.log("Successfully synced GitHub token to DB");
+          }
+        } catch (err) {
+          console.error("Unexpected error syncing token:", err);
+        }
+      }
+      // >>>>> END NEW CODE <<<<<
 
       // Always end loading state after auth event
       setLoading(false);
