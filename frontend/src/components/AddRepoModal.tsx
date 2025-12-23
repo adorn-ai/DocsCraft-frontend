@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { addRepo } from '@/services/repoService'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/lib/supabase' // Import Supabase
 
 interface AddRepoModalProps {
   onSuccess: () => void
@@ -27,14 +28,37 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
   const [repoUrl, setRepoUrl] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [loading, setLoading] = useState(false)
+  
+  // New state to track connection status correctly
+  const [isGitHubConnected, setIsGitHubConnected] = useState(false)
 
-  const checkGitHubConnection = () => {
-    const githubToken = localStorage.getItem('github_token')
-    return githubToken && (
-      githubToken.startsWith('gho_') || 
-      githubToken.startsWith('ghp_') || 
-      githubToken.startsWith('github_pat_')
-    )
+  // Check connection on mount (similar to ConnectGitHub component)
+  useEffect(() => {
+    checkConnection()
+  }, [])
+
+  const checkConnection = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setIsGitHubConnected(false)
+      return
+    }
+
+    // 1. Check if user signed in directly with GitHub
+    const provider = session.user.app_metadata?.provider || session.user.user_metadata?.provider
+    if (provider === 'github') {
+      setIsGitHubConnected(true)
+      return
+    }
+
+    // 2. Check if user linked GitHub manually (database check)
+    const { data: tokenData } = await supabase
+      .from('github_tokens')
+      .select('token')
+      .eq('user_id', session.user.id)
+      .single()
+
+    setIsGitHubConnected(!!tokenData?.token)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,8 +79,8 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
       return
     }
 
-    // Check GitHub connection for private repos
-    if (isPrivate && !checkGitHubConnection()) {
+    // Check GitHub connection for private repos using the correct state
+    if (isPrivate && !isGitHubConnected) {
       toast.error('GitHub Not Connected', {
         description: 'Please connect your GitHub account in Settings to add private repositories',
         action: {
@@ -200,7 +224,8 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
               </Label>
             </div>
 
-            {isPrivate && !checkGitHubConnection() && (
+            {/* Updated conditional rendering using isGitHubConnected */}
+            {isPrivate && !isGitHubConnected && (
               <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-orange-800">
@@ -222,7 +247,7 @@ export function AddRepoModal({ onSuccess }: AddRepoModalProps) {
               </div>
             )}
 
-            {isPrivate && checkGitHubConnection() && (
+            {isPrivate && isGitHubConnected && (
               <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-green-800">
