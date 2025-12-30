@@ -28,6 +28,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [needsMFA, setNeedsMFA] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [showSlowLoadingWarning, setShowSlowLoadingWarning] = useState(false);
+
+  // Timeout warning effect
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setShowSlowLoadingWarning(true);
+      }, 5000); // Show warning after 5 seconds
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowSlowLoadingWarning(false);
+    }
+  }, [loading]);
 
   useEffect(() => {
     let mounted = true;
@@ -43,32 +57,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session ?? null);
         setUser(session?.user ?? null);
 
-        // ---- CHECK MFA ----
+        // ---- CHECK MFA WITH TIMEOUT ----
         if (session) {
           try {
-            const { data: factors } = await supabase.auth.mfa.listFactors();
-            const verifiedFactor = factors?.totp?.find(
-              (f) => f.status === "verified"
-            );
+            // Set a timeout for MFA check to prevent hanging
+            const mfaCheckPromise = Promise.race([
+              (async () => {
+                const { data: factors } = await supabase.auth.mfa.listFactors();
+                const verifiedFactor = factors?.totp?.find(
+                  (f) => f.status === "verified"
+                );
 
-            if (verifiedFactor) {
-              const { data: aalData } =
-                await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+                if (verifiedFactor) {
+                  const { data: aalData } =
+                    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
-              if (aalData?.currentLevel !== "aal2") {
-                const { data: challenge } = await supabase.auth.mfa.challenge({
-                  factorId: verifiedFactor.id,
-                });
+                  if (aalData?.currentLevel !== "aal2") {
+                    const { data: challenge } = await supabase.auth.mfa.challenge({
+                      factorId: verifiedFactor.id,
+                    });
 
-                if (challenge) {
-                  setNeedsMFA(true);
-                  setMfaFactorId(verifiedFactor.id);
-                  return; // ⛔ stop normal flow
+                    if (challenge) {
+                      return { needsMFA: true, factorId: verifiedFactor.id };
+                    }
+                  }
                 }
-              }
+                return { needsMFA: false, factorId: null };
+              })(),
+              // Timeout after 3 seconds
+              new Promise<{ needsMFA: false; factorId: null }>((resolve) =>
+                setTimeout(() => {
+                  console.warn("MFA check timed out - continuing without MFA");
+                  resolve({ needsMFA: false, factorId: null });
+                }, 3000)
+              ),
+            ]);
+
+            const mfaResult = await mfaCheckPromise;
+            
+            if (mfaResult.needsMFA && mfaResult.factorId) {
+              setNeedsMFA(true);
+              setMfaFactorId(mfaResult.factorId);
+              setLoading(false); // Set loading false before returning
+              return; // ⛔ stop normal flow
             }
           } catch (e) {
             console.error("MFA check error", e);
+            // Continue anyway - don't block the app
           }
         }
       } catch (e) {
@@ -80,32 +115,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     init();
 
-    // ---------------------------------------------------------
-    //  AUTH STATE LISTENER (Updated)
-    // ---------------------------------------------------------
+    // AUTH STATE LISTENER
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
+      console.log("Auth state change:", event);
+
       setSession(session ?? null);
       setUser(session?.user ?? null);
 
-      // >>>>> START NEW CODE: SYNC GITHUB TOKEN <<<<<
-      // Whenever a session updates (login, refresh) and contains a provider_token,
-      // save it immediately to the database so repoService can find it later.
+      // SYNC GITHUB TOKEN TO DATABASE
       if (session?.provider_token && session?.user?.id) {
         console.log("Found GitHub provider token, syncing to database...");
         try {
-          // Attempt to save token directly to DB to ensure repoService finds it
           const { error } = await supabase
             .from("github_tokens")
             .upsert(
               {
                 user_id: session.user.id,
                 token: session.provider_token,
-                // Add updated_at if your table has this column, otherwise remove this line
-                updated_at: new Date().toISOString(), 
+                updated_at: new Date().toISOString(),
               },
               { onConflict: "user_id" }
             );
@@ -119,7 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Unexpected error syncing token:", err);
         }
       }
-      // >>>>> END NEW CODE <<<<<
 
       // Always end loading state after auth event
       setLoading(false);
@@ -169,13 +199,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Better loading screen
+  // Loading screen with timeout warning
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-orange-600 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Loading GitCrafts...</p>
+          <p className="text-gray-600 text-lg mb-2">Loading GitCrafts...</p>
+          
+          {showSlowLoadingWarning && (
+            <div className="mt-6 p-4 bg-white rounded-lg shadow-lg max-w-md mx-auto">
+              <p className="text-sm text-gray-700 mb-3">
+                Taking longer than expected? This might be due to cached data.
+              </p>
+              <button 
+                onClick={() => {
+                  // Clear all auth-related data
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  // Clear Supabase storage
+                  Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-')) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                  window.location.href = '/login';
+                }}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium transition-colors"
+              >
+                Login and Retry
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -197,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setNeedsMFA(false);
           setMfaFactorId(null);
           
-          // 🔥 Redirect to dashboard after successful MFA
+          // Redirect to dashboard after successful MFA
           window.location.href = '/dashboard';
         }}
         onCancel={async () => {
