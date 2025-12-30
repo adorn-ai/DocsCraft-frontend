@@ -16,6 +16,9 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Features from "./pages/Features";
+import AdminDashboard from "./pages/AdminDashboard";
+
+const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL
 
 export default function App() {
   return (
@@ -31,6 +34,15 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/features" element={<Features />} />
           <Route path="/contact" element={<Contact />} />
+
+          <Route
+            path={DASHBOARD_URL}
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/dashboard"
