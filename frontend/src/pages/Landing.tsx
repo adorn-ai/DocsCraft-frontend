@@ -19,7 +19,7 @@ export default function Landing() {
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="GitCrafts" className="h-20 w-20" />
+            {/*<img src="/logo.png" alt="GitCrafts" className="h-20 w-20" />*/}
             <span className="text-2xl font-bold text-gray-900">GitCrafts</span>
           </div>
           <div className="hidden md:flex items-center gap-8">

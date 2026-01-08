@@ -178,7 +178,7 @@ export default function Dashboard() {
             onClick={() => navigate("/dashboard")}
           >
             {/*<img src="/logo.png" alt="GitCrafts" className="h-8 w-8" />*/}
-            <h2 className="text-2xl font-bold text-gray-900">Gitcrafts</h2>
+            <h3 className="text-2xl font-bold text-gray-900">Gitcrafts</h3>
           </div>
 
           <div className="flex items-center gap-4">
