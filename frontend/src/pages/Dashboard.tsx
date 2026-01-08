@@ -177,8 +177,8 @@ export default function Dashboard() {
             className="flex items-center gap-3 cursor-pointer"
             onClick={() => navigate("/dashboard")}
           >
-            <img src="/logo.png" alt="GitCrafts" className="h-8 w-8" />
-            <h1 className="text-2xl font-bold text-gray-900">GitCrafts</h1>
+            {/*<img src="/logo.png" alt="GitCrafts" className="h-8 w-8" />*/}
+            <h2 className="text-2xl font-bold text-gray-900">Gitcrafts</h2>
           </div>
 
           <div className="flex items-center gap-4">

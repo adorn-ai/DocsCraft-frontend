@@ -335,7 +335,7 @@ export default function Features() {
       <footer className="border-t bg-white mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">© 2024 GitCrafts. All rights reserved.</p>
+            <p className="text-sm text-gray-600">© 2025 GitCrafts. All rights reserved.</p>
             <div className="flex gap-6">
               <button onClick={() => navigate('/how-it-works')} className="text-sm text-gray-600 hover:text-orange-600">
                 How It Works
