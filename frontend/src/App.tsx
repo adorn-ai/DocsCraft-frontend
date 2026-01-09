@@ -18,6 +18,7 @@ import Contact from "./pages/Contact";
 import Features from "./pages/Features";
 import AdminDashboard from "./pages/AdminDashboard";
 import HowItWorks from "./pages/HowItWorks";
+import Examples from "./pages/Examples";
 
 const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL
 
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/features" element={<Features />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/examples" element={<Examples />} />
 
           <Route
             path={DASHBOARD_URL}
