@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 import readme from "@/examples/README.md?raw";
@@ -16,10 +17,23 @@ const docs = [
 
 export default function Examples() {
   const [active, setActive] = useState(docs[0]);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 py-20">
       <div className="max-w-7xl mx-auto px-4">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="text-gray-600 hover:text-orange-600"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+        </div>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Example Documentation
