@@ -1,14 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  FileText,
-  Zap,
-  Shield,
-  Github,
-  ArrowRight,
-  Eye,
-} from "lucide-react";
+import { FileText, Zap, Shield, Github, ArrowRight, Eye } from "lucide-react";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -22,13 +15,22 @@ export default function Landing() {
             <span className="text-2xl font-bold text-gray-900">GitCrafts</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/features" className="text-gray-600 hover:text-orange-600 transition">
+            <a
+              href="/features"
+              className="text-gray-600 hover:text-orange-600 transition"
+            >
               Features
             </a>
-            <a href="/pricing" className="text-gray-600 hover:text-orange-600 transition">
+            <a
+              href="/pricing"
+              className="text-gray-600 hover:text-orange-600 transition"
+            >
               Pricing
             </a>
-            <a href="/how-it-works" className="text-gray-600 hover:text-orange-600 transition">
+            <a
+              href="/how-it-works"
+              className="text-gray-600 hover:text-orange-600 transition"
+            >
               How it Works
             </a>
           </div>
@@ -46,7 +48,9 @@ export default function Landing() {
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-600 px-4 py-2 rounded-full mb-8">
             <Zap className="h-4 w-4" />
-            <span className="text-sm font-medium">AI-powered documentation</span>
+            <span className="text-sm font-medium">
+              AI-powered documentation
+            </span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
@@ -56,8 +60,9 @@ export default function Landing() {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto">
-            GitCrafts lets you generate professional documentation in minutes for your projects
-            using AI, no coding required. Built for developers, by developers
+            GitCrafts lets you generate professional documentation in minutes
+            for your projects using AI, no coding required. Built for
+            developers, by developers
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -114,8 +119,8 @@ export default function Landing() {
                 </h3>
 
                 <p className="text-gray-600 mb-4 max-w-2xl mx-auto">
-                  Preview actual README, API, and contributing docs generated from
-                  real repositories — no mockups.
+                  Preview actual README, API, and contributing docs generated
+                  from real repositories — no mockups.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -207,6 +212,18 @@ export default function Landing() {
         <p className="text-gray-400 text-sm">
           © 2026 GitCrafts. All rights reserved.
         </p>
+        <a
+          href="https://orynth.dev/projects/gitcrafts"
+          target="_blank"
+          rel="noopener"
+        >
+          <img
+            src="https://orynth.dev/api/badge/gitcrafts?theme=light&style=default"
+            alt="Featured on Orynth"
+            width="260"
+            height="80"
+          />
+        </a>
       </footer>
     </div>
   );
